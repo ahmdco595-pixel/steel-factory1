@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Steel Pro Dashboard</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/bootstrap.rtl.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #3b82f6;
+            --secondary: #64748b;
+            --dark-bg: #0f172a;
+            --card-bg: #1e293b;
+            --accent: #10b981;
+            --danger: #ef4444;
+        }
+
+        body {
+            background-color: var(--dark-bg);
+            color: #f1f5f9;
+            font-family: 'IBM Plex Sans Arabic', sans-serif;
+            margin-bottom: 80px; /* مساحة للبار السفلي */
+        }
+
+        /* Navigation Bar السفلي للموبايل */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(30, 41, 59, 0.95);
+            backdrop-filter: blur(10px);
+            display: flex;
+            justify-content: space-around;
+            padding: 12px 0;
+            border-top: 1px solid #334155;
+            z-index: 1000;
+        }
+
+        .nav-item {
+            color: var(--secondary);
+            text-decoration: none;
+            font-size: 0.75rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: 0.3s;
+            cursor: pointer;
+        }
+
+        .nav-item i { font-size: 1.4rem; margin-bottom: 4px; }
+        .nav-item.active { color: var(--primary); }
+
+        /* البطاقات الاحترافية */
+        .app-card {
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border: 1px solid #334155;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .section-title { font-weight: 700; color: var(--primary); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+
+        /* Inputs */
+        .form-label { font-size: 0.85rem; color: #94a3b8; margin-bottom: 8px; }
+        .form-control, .form-select {
+            background: #0f172a;
+            border: 1px solid #334155;
+            color: white;
+            border-radius: 12px;
+            padding: 12px;
+        }
+        .form-control:focus { background: #0f172a; color: white; border-color: var(--primary); box-shadow: none; }
+
+        /* Checkbox Buttons */
+        .filter-chip {
+            display: none;
+        }
+        .filter-label {
+            padding: 8px 16px;
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 50px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: 0.3s;
+            color: #94a3b8;
+        }
+        .filter-chip:checked + .filter-label {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        /* Coil Display */
+        .coil-item {
+            border-right: 4px solid var(--primary);
+            transition: 0.3s;
+        }
+        .data-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
+        .data-box { background: rgba(15, 23, 42, 0.5); padding: 10px; border-radius: 10px; text-align: center; }
+        .data-box span { display: block; font-size: 0.7rem; color: #64748b; }
+        .data-box b { font-size: 0.9rem; color: #e2e8f0; }
+
+        .weight-badge { background: rgba(16, 185, 129, 0.15); color: var(--accent); padding: 4px 12px; border-radius: 8px; font-weight: bold; }
+
+        .content-section { display: none; }
+        .content-section.active { display: block; animation: slideUp 0.4s ease; }
+
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+
+<div class="container mt-3">
+    <div id="inv-sec" class="content-section active">
+        <h5 class="section-title"><i class="fas fa-warehouse"></i> جرد المخزن الذكي</h5>
+        
+        <div class="app-card">
+            <div class="d-flex flex-wrap gap-2 mb-3">
+                <input type="checkbox" id="chkCode" class="filter-chip" checked onchange="onlyOne(this)">
+                <label for="chkCode" class="filter-label">كود اللفة</label>
+
+                <input type="checkbox" id="chkType" class="filter-chip" onchange="onlyOne(this)">
+                <label for="chkType" class="filter-label">النوع</label>
+
+                <input type="checkbox" id="chkThk" class="filter-chip" onchange="onlyOne(this)">
+                <label for="chkThk" class="filter-label">السمك</label>
+
+                <input type="checkbox" id="chkWd" class="filter-chip" onchange="onlyOne(this)">
+                <label for="chkWd" class="filter-label">العرض</label>
+            </div>
+            <input type="text" id="searchInput" class="form-control" placeholder="ابحث هنا..." onkeyup="filterInventory()">
+        </div>
+
+        <div id="inventoryList">
+            {% for item in inventory %}
+            <div class="app-card coil-item" 
+                 data-code="{{item.coil_code}}" data-type="{{item.coil_type}}" 
+                 data-thk="{{item.thickness}}" data-wd="{{item.width}}">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="fw-bold" style="color: #58a6ff;">{{ item.coil_code }}</span>
+                    <span class="weight-badge">{{ "%.0f"|format(item.remaining_weight) }} كجم</span>
+                </div>
+                <div class="data-grid">
+                    <div class="data-box"><span>النوع</span><b>{{ item.coil_type }}</b></div>
+                    <div class="data-box"><span>السمك (ملم)</span><b>{{ item.thickness }}</b></div>
+                    <div class="data-box"><span>العرض (ملم)</span><b>{{ item.width }}</b></div>
+                    <div class="data-box"><span>المكان</span><b>{{ item.location or 'A1' }}</b></div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div id="add-sec" class="content-section">
+        <h5 class="section-title"><i class="fas fa-plus-circle"></i> إصدار أمر جديد</h5>
+        <div class="app-card">
+            <form action="/add_order" method="POST">
+                <div class="mb-3">
+                    <label class="form-label">العميل</label>
+                    <input type="text" name="customer_name" class="form-control" placeholder="اسم العميل" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">اختر اللفة</label>
+                    <select name="coil_code" id="c_select" class="form-select" onchange="syncData()" required>
+                        <option value="">-- اختر من القائمة --</option>
+                        {% for item in inventory %}
+                        <option value="{{item.coil_code}}" data-thk="{{item.thickness}}" data-wd="{{item.width}}" data-type="{{item.coil_type}}" data-rem="{{item.remaining_weight}}">
+                            {{item.coil_code}} ({{item.coil_type}})
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">طول اللوح بالسنتيمتر (cm)</label>
+                    <input type="number" step="0.1" name="cut_length" id="cut_l" class="form-control" placeholder="مثال: 200" oninput="calc()" required>
+                </div>
+                <div class="row g-3 mb-3">
+                    <div class="col-6">
+                        <label class="form-label">الوزن (كجم)</label>
+                        <input type="number" step="0.1" name="requested_weight" id="req_w" class="form-control" oninput="calc()">
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label">عدد الألواح</label>
+                        <input type="number" name="sheet_count" id="req_s" class="form-control" oninput="calc()">
+                    </div>
+                </div>
+                
+                <input type="hidden" name="thickness" id="h_thk"><input type="hidden" name="width" id="h_wd">
+                <input type="hidden" name="total_weight_original" id="h_rem"><input type="hidden" name="coil_type" id="h_type">
+
+                <div class="p-3 bg-black rounded text-center border border-secondary mb-3">
+                    <small class="text-muted d-block">وزن اللوح الواحد</small>
+                    <h5 class="m-0 text-primary"><span id="unit_w">0.00</span> كجم</h5>
+                </div>
+
+                <button type="submit" class="btn btn-primary w-100 py-3 fw-bold rounded-4 shadow">إرسال للمقص</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="ord-sec" class="content-section">
+        <h5 class="section-title"><i class="fas fa-list-check"></i> قائمة الانتظار</h5>
+        {% for o in orders %}
+        <div class="app-card border-start border-warning border-4">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <h6 class="m-0">{{ o.customer_name }}</h6>
+                    <small class="text-muted">اللفة: {{ o.coil_code }}</small>
+                </div>
+                <a href="/complete/{{ o.id }}" class="btn btn-success btn-sm rounded-pill"><i class="fas fa-check"></i></a>
+            </div>
+            <div class="d-flex justify-content-between mt-3 small text-center">
+                <div class="flex-fill"><b>{{ o.requested_weight }}</b><br><span class="text-muted">كجم</span></div>
+                <div class="flex-fill"><b>{{ o.length }}</b><br><span class="text-muted">سم</span></div>
+                <div class="flex-fill"><b>{{ o.sheet_count }}</b><br><span class="text-muted">لوح</span></div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<div class="bottom-nav">
+    <div class="nav-item active" onclick="switchSection('inv-sec', this)"><i class="fas fa-search"></i><span>الجرد</span></div>
+    <div class="nav-item" onclick="switchSection('add-sec', this)"><i class="fas fa-plus-circle"></i><span>طلب</span></div>
+    <div class="nav-item" onclick="switchSection('ord-sec', this)"><i class="fas fa-tasks"></i><span>الأوامر</span></div>
+</div>
+
+<script>
+    // 1. جعل الـ Checkboxes تعمل كـ Radio (اختيار واحد فقط)
+    function onlyOne(checkbox) {
+        let checkboxes = document.getElementsByClassName('filter-chip');
+        for (let i = 0; i < checkboxes.length; i++) {
+            if (checkboxes[i] !== checkbox) checkboxes[i].checked = false;
+        }
+        filterInventory(); // تحديث البحث عند تغيير النوع
+    }
+
+    // 2. التنقل السلس بين الأقسام
+    function switchSection(id, el) {
+        document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+        el.classList.add('active');
+        window.scrollTo(0,0);
+    }
+
+    // 3. الفلترة الاحترافية
+    function filterInventory() {
+        const query = document.getElementById('searchInput').value.toLowerCase();
+        const chkCode = document.getElementById('chkCode').checked;
+        const chkType = document.getElementById('chkType').checked;
+        const chkThk = document.getElementById('chkThk').checked;
+        const chkWd = document.getElementById('chkWd').checked;
+
+        document.querySelectorAll('.coil-item').forEach(row => {
+            let match = false;
+            if (chkCode && row.dataset.code.toLowerCase().includes(query)) match = true;
+            if (chkType && row.dataset.type.toLowerCase().includes(query)) match = true;
+            if (chkThk && row.dataset.thk.includes(query)) match = true;
+            if (chkWd && row.dataset.wd.includes(query)) match = true;
+            row.style.display = (match || query === "") ? "block" : "none";
+        });
+    }
+
+    // 4. الحسابات الدقيقة (تحويل cm إلى mm برمجياً)
+    function syncData() {
+        const s = document.getElementById('c_select');
+        const o = s.options[s.selectedIndex];
+        if(o.value) {
+            document.getElementById('h_thk').value = o.dataset.thk;
+            document.getElementById('h_wd').value = o.dataset.wd;
+            document.getElementById('h_type').value = o.dataset.type;
+            document.getElementById('h_rem').value = o.dataset.rem;
+            calc();
+        }
+    }
+
+    function calc() {
+        const t = parseFloat(document.getElementById('h_thk').value) || 0;
+        const w = parseFloat(document.getElementById('h_wd').value) || 0;
+        const l_cm = parseFloat(document.getElementById('cut_l').value) || 0;
+        
+        // تحويل السنتيمتر إلى مليمتر للحساب
+        const l_mm = l_cm * 10; 
+        
+        // المعادلة: سمك (مم) × عرض (مم) × طول (مم) × 7.85 / 1,000,000
+        const unitW = (t * w * l_mm * 7.85) / 100000;
+        document.getElementById('unit_w').innerText = unitW.toFixed(3);
+
+        if(document.activeElement.id === 'req_w') {
+            const totalW = parseFloat(document.getElementById('req_w').value) || 0;
+            document.getElementById('req_s').value = Math.round(totalW / unitW) || 0;
+        } else if(document.activeElement.id === 'req_s') {
+            const sheets = parseInt(document.getElementById('req_s').value) || 0;
+            document.getElementById('req_w').value = (sheets * unitW).toFixed(2);
+        }
+    }
+</script>
+</body>
+</html>
